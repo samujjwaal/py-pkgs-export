@@ -1,25 +1,22 @@
 # (c) 2021 Samujjwaal Dey
 import shlex
-import subprocess
+from subprocess import run
 
 
 def execute(command: str) -> str:
-	cmd = shlex.split(command)
-	output = subprocess.run(cmd, capture_output=True, text=True).stdout
-	return str(output)
+	return str(run(shlex.split(command), capture_output=True, text=True).stdout)
 
 
-def extract_pip_packages(pkg_list, start, end):
+def extract_pip_packages(pkg_list: list[str], start: int, end: int) -> dict:
 	pkgs = {}
 	for k in range(start, end):
 		pkg_name = pkg_list[k].split('- ')[1].split('==')[0]
 		pkg_version = pkg_list[k].split('- ')[1].split('==')[1]
-		print(pkg_name, pkg_version)
 		pkgs[pkg_name] = pkg_version
 	return pkgs
 
 
-def extract_conda_pkgs(pkg_list, start, end):
+def extract_conda_pkgs(pkg_list: list[str], start: int, end: int) -> tuple[dict, dict]:
 	conda_pkgs = {}
 	pip_pkgs = {}
 	for j in range(start, end):
@@ -34,7 +31,7 @@ def extract_conda_pkgs(pkg_list, start, end):
 	return conda_pkgs, pip_pkgs
 
 
-def generate_env_dict(cmd_output):
+def generate_env_dict(cmd_output: str) -> dict:
 	env = {}
 	print(cmd_output)
 	data = cmd_output.split('\n')
@@ -42,10 +39,10 @@ def generate_env_dict(cmd_output):
 	env['channels'] = []
 	for i in range(2, data.index('dependencies:')):
 		env['channels'].append(data[i].split('- ')[1])
-
 	env['pkgs'], env['pip'] = extract_conda_pkgs(data, i + 2, len(data) - i)
-
+	env['prefix'] = data[-2].split(': ')[1]
 	print(env)
+	return env
 
 
 if __name__ == '__main__':
